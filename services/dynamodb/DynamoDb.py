@@ -11,7 +11,7 @@ from services.dynamodb.drivers.DynamoDbCommon import DynamoDbCommon
 class DynamoDb(Service):
     
     
-    def __init__(self,region):
+    def __init__(self, region):
         super().__init__(region)
         self.dynamoDbClient = boto3.client('dynamodb')
         self.cloudWatchClient = boto3.client('cloudwatch')
@@ -41,7 +41,7 @@ class DynamoDb(Service):
             return tableArr    
             
         except botocore.exceptions.ClientError as e:
-            return e
+            ecode = e.response['Error']['Code']
             
     def advise(self):
         objs = {}
@@ -49,14 +49,7 @@ class DynamoDb(Service):
         #retrieve all tables in DynamoDb
         listOfTables = self.list_tables()
         for eachTable in listOfTables:
-            obj = DynamoDbCommon(
-                eachTable, 
-                self.dynamoDbClient, 
-                self.cloudWatchClient, 
-                self.serviceQuotaClient, 
-                self.appScalingPolicyClient, 
-                self.backupClient
-                )
+            obj = DynamoDbCommon(eachTable, self.dynamoDbClient, self.cloudWatchClient, self.serviceQuotaClient, self.appScalingPolicyClient, self.backupClient)
             obj.run()
             
             objs['DynamoDb::' + eachTable['Table']['TableName']] = obj.getInfo()
@@ -68,7 +61,7 @@ class DynamoDb(Service):
            
 if __name__ == "__main__":
     Config.init()
-    o = DynamoDb('ap-southeast-1')
+    o = DynamoDb('ap-southeast-2')
     out = o.advise()
     print(out)
 
