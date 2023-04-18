@@ -1,0 +1,275 @@
+{
+	"resourcesWithTags": {
+		"category": "CO",
+		"description": "You have {$COUNT} Table that do not have tags",
+		"shortDesc": "Set tags on tables",
+		"criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableLevelCostAnalysis.html/>"
+		]
+	},
+	"capacityMode":{
+	    "category":"CO",
+	    "description": "--",
+	    "shortDesc":"--",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableCapacityMode.html>"
+		]
+	},
+	"provisionedAutoScaling":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} Tables that has enabled provisioned capacity with autoscaling",
+	    "shortDesc":"Provisioned capacity with Autoscaling",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"autoScalingHighUtil":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} Tables that has enabled provisioned capacity with autoscaling",
+	    "shortDesc":"Provisioned capacity with Autoscaling",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"autoScalinglowUtil":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} Tables that has enabled provisioned capacity with autoscaling",
+	    "shortDesc":"Provisioned capacity with Autoscaling",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"reservedCapacity":{
+	    "category":"CO",
+	    "description": "--",
+	    "shortDesc":"--",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"tableClass":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} Tables that has enabled Normal/IA class",
+	    "shortDesc":"Table class type",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_UnusedResources.html>"
+		]
+	},
+	"unusedResourcesGSIRead":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} of tables where Read Capacity Unit () is 0.",
+	    "shortDesc":"Unused Resources Global Secondary Index - Read",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableUsagePatterns.html>"
+		]
+	},
+	"unusedResourcesGSIWrite":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} of tables where Write Capacity Unit (WCU) is 0.",
+	    "shortDesc":"Provisioned Resources Global Secondary Index - Write",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableUsagePatterns.html>"
+		]
+	},
+	"attributeNamesXL":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} attributes name longer than 15 characters.",
+	    "shortDesc":"Attributes Name length",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"attributeNamesL":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} attributes name longer than 8 characters.",
+	    "shortDesc":"Attributes Name length",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"enabledTTL":{
+	    "category":"CO",
+	    "description": "You have {$COUNT} Tables that has not enabled Time-To-Live",
+	    "shortDesc":"Tables Time-To-Live (TTL)",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"deleteTableProtection":{
+	    "category":"R",
+	    "description": "You have {$COUNT} Tables that has not enabled Delete Table protection.",
+	    "shortDesc":"Delete Table Protection",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"enabledContinuousBackup":{
+	    "category":"R",
+	    "description": "You have {$COUNT} Tables that has not enabled continuous backup.",
+	    "shortDesc":"Table Continuous Backup",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"enabledBackup":{
+	    "category":"R",
+	    "description": "You have {$COUNT} Tables that has not enabled backup",
+	    "shortDesc":"Tables Backup",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"serviceLimitPerTable":{
+	    "category":"R",
+	    "description": "You have {$COUNT} Tables that has average reach of 80% of current limit",
+	    "shortDesc":"Service limit per table",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"serviceLimitPerRegion":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"capacityModeOnDemand":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"capacityModeProvisioned":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"autoScalingStatus":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"backupStatus":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	}
+}
