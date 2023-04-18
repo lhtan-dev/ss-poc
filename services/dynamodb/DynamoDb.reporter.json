@@ -271,5 +271,31 @@
 		"ref": [
 			"[AWS Docs]<>"
 		]
+	},
+	"systemErrors":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"throttledRequest":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
 	}
 }

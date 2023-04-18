@@ -247,11 +247,239 @@ class DynamoDbCommon(Evaluator):
             ecode = e.response['Error']['Code']
             print(ecode)
     
+    # logic to check CW Sum SystemErrors > 0
+    def _check_systemerrors(self):
+        try:
+            #Count the number active reads on the table on the GSIs
+            result = self.cloudWatchClient.get_metric_statistics(
+                Namespace = 'AWS/DynamoDB',
+                MetricName = 'SystemErrors',
+                Dimensions = [
+                       {
+                            'Name':'Operation',
+                            'Value':'GetRecords'
+                        },
+                    ],
+                StartTime = datetime.datetime.now() - datetime.timedelta(7),
+                EndTime = datetime.datetime.now(),
+                Period = 900,
+                Statistics = [
+                    'Sum',
+                ],
+                Unit = 'Count'
+            )
+            
+            for eachDatapoints in result['Datapoints']:
+                if eachDatapoints['Sum'] >= 1.0:
+                    self.results['systemErrors'] = [-1, self.tables['Table']['TableName'] + ' : SystemError resulting in HTTP500 error code over the past 7 days']
+                    
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
+     
+    # logic to check CW Sum ThrottledRequest > 0
+    def _check_throttled_request(self):
+        try:
+            #Count the number active reads on the table on the GSIs
+            result = self.cloudWatchClient.get_metric_statistics(
+                Namespace = 'AWS/DynamoDB',
+                MetricName = 'ThrottledRequests',
+                Dimensions = [
+                       {
+                            'Name':'Operation',
+                            'Value':'BatchGetItem'
+                        },
+                    ],
+                StartTime = datetime.datetime.now() - datetime.timedelta(7),
+                EndTime = datetime.datetime.now(),
+                Period = 900,
+                Statistics = [
+                    'Sum',
+                ],
+                Unit = 'Count'
+            )
+            
+            for eachDatapoints in result['Datapoints']:
+                if eachDatapoints['Sum'] >= 1.0:
+                    self.results['throttledRequest'] = [-1, self.tables['Table']['TableName'] + ' : request throttled in the past 7 days']
+                    
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
+    
+    # logic to check CW Sum ConditionalFailedRequest > 0
+    def _check_conditional_failed_request(self):
+        try:
+            #Count the number active reads on the table on the GSIs
+            result = self.cloudWatchClient.get_metric_statistics(
+                Namespace = 'AWS/DynamoDB',
+                MetricName = 'ThrottledRequests',
+                Dimensions = [
+                       {
+                            'Name':'TableName',
+                            'Value':self.tables['Table']['TableName']
+                        },
+                    ],
+                StartTime = datetime.datetime.now() - datetime.timedelta(7),
+                EndTime = datetime.datetime.now(),
+                Period = 900,
+                Statistics = [
+                    'Sum',
+                ],
+                Unit = 'Count'
+            )
+            
+            for eachDatapoints in result['Datapoints']:
+                if eachDatapoints['Sum'] >= 1.0:
+                    self.results['conditionalFailedRequest'] = [-1, self.tables['Table']['TableName'] + ' : resulted in HTTP400 errors in the past 7 days']
+                    
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
     
     
     
     
     
+    # logic to check right provisioning
+    def INCOMPLETE_check_right_provisioning(self):
+        try:
+            #WCU provisioned and consumed
+            wcuResult = self.cloudWatchClient.get_metric_data(
+                    MetricDataQueries = [
+                        {
+                            'Id':'ProvisionedWCU',
+                            'MetricStat':{
+                                'Metric':{
+                                    'Namespace':'AWS/DynamoDb',
+                                    'MetricName':'ProvisionedWriteCapacityUnits',
+                                    'Dimensions':[
+                                        {
+                                            'Name':'TableName',
+                                            'Value':self.tables['Table']['TableName']
+                                        },
+                                    ]
+                                },
+                                'Period':3600,
+                                'Stat':'Average'
+                            },
+                            'Label':'Provisioned',
+                            'ReturnData':False
+                        },
+                        {
+                            'Id':'consumedWCU',
+                            'MetricStat':{
+                                'Metric':{
+                                    'Namespace':'AWS/DynamoDb',
+                                    'MetricName':'ConsumedWriteCapacityUnits',
+                                    'Dimensions':[
+                                        {
+                                            'Name':'TableName',
+                                            'Value':self.tables['Table']['TableName']
+                                        },
+                                    ]
+                                },
+                                'Period':3600,
+                                'Stat':'Sum',
+                            },
+                            'Label':'',
+                            'ReturnData':False
+                        },
+                        {
+                            'Id':'m1',
+                            'Expression':'consumedWCU/PERIOD(consumedWCU)',
+                            'Label':'Consumed WCUs',
+                            'ReturnData':False
+                        },
+                        {
+                            'Id':'utilizationPercentage',
+                            'Expression':'100*(m1/provisionedWCU)',
+                            'Label':'Utilization Percentage',
+                            'ReturnData':True
+                        }
+                    ],
+                    StartTime = datetime.datetime.now() - datetime.timedelta(7),
+                    EndTime = datetime.datetime.now(),
+                    ScanBy = 'TimestampDescending',
+                    MaxDataPoints = 24
+                )
+            
+            #RCU provisioned and consumed
+            rcuResult = self.cloudWatchClient.get_metric_data(
+                    MetricDataQueries = [
+                        {
+                            'Id':'ProvisionedRCU',
+                            'MetricStat':{
+                                'Metric':{
+                                    'Namespace':'AWS/DynamoDb',
+                                    'MetricName':'ProvisionedReadCapacityUnits',
+                                    'Dimensions':[
+                                        {
+                                            'Name':'TableName',
+                                            'Value':self.tables['Table']['TableName']
+                                        },
+                                    ]
+                                },
+                                'Period':3600,
+                                'Stat':'Average'
+                            },
+                            'Label':'Provisioned',
+                            'ReturnData':False
+                        },
+                        {
+                            'Id':'consumedRCU',
+                            'MetricStat':{
+                                'Metric':{
+                                    'Namespace':'AWS/DynamoDb',
+                                    'MetricName':'ConsumedReadCapacityUnits',
+                                    'Dimensions':[
+                                        {
+                                            'Name':'TableName',
+                                            'Value':self.tables['Table']['TableName']
+                                        },
+                                    ]
+                                },
+                                'Period':3600,
+                                'Stat':'Sum',
+                            },
+                            'Label':'',
+                            'ReturnData':False
+                        },
+                        {
+                            'Id':'m1',
+                            'Expression':'consumedRCU/PERIOD(consumedRCU)',
+                            'Label':'Consumed WCUs',
+                            'ReturnData':False
+                        },
+                        {
+                            'Id':'utilizationPercentage',
+                            'Expression':'100*(m1/provisionedRCU)',
+                            'Label':'Utilization Percentage',
+                            'ReturnData':True
+                        }
+                    ],
+                    StartTime = datetime.datetime.now() - datetime.timedelta(7),
+                    EndTime = datetime.datetime.now(),
+                    ScanBy = 'TimestampDescending',
+                    MaxDataPoints = 24
+                )
+                
+            #TODO
+            
+            #Underprovision
+            #1 - last 12 months ~ 90%
+            #2 - growing 8% monthly in 3 months
+            #3 - growing 5% monthly in 4.5 months
+            
+            #Overprovision
+            #1 - last 12 months ~ 20%
+            #2 - low util to high throttle ration (Max(ThrottleEvents)/Min(ThrottleEvents) in the interval)
+            
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
+
+
     #INCOMPLETE
     # logic to check max table / region
     def INCOMPLETE__check_service_quotas(self):
