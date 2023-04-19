@@ -7,6 +7,7 @@ import math
 from services.Service import Service
 from utils.Config import Config
 from services.dynamodb.drivers.DynamoDbCommon import DynamoDbCommon
+from services.dynamodb.drivers.DynamoDbGeneric import DynamoDbGeneric
 
 class DynamoDb(Service):
     
@@ -18,6 +19,7 @@ class DynamoDb(Service):
         self.serviceQuotaClient = boto3.client('service-quotas')
         self.appScalingPolicyClient = boto3.client('application-autoscaling')
         self.backupClient = boto3.client('backup')
+        self.cloudTrailClient = boto3.client('cloudtrail')
     
     
     #Get all tables descriptions [JSON]
@@ -42,27 +44,43 @@ class DynamoDb(Service):
             
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
+        
             
     def advise(self):
+        
         objs = {}
         
         #retrieve all tables in DynamoDb
         listOfTables = self.list_tables()
-        for eachTable in listOfTables:
-            obj = DynamoDbCommon(eachTable, self.dynamoDbClient, self.cloudWatchClient, self.serviceQuotaClient, self.appScalingPolicyClient, self.backupClient)
+        #run common checks
+        try:
+            obj = DynamoDbGeneric(listOfTables, self.dynamoDbClient, self.cloudWatchClient, self.serviceQuotaClient, self.appScalingPolicyClient, self.backupClient, self.cloudTrailClient)
             obj.run()
-            
+            objs['DynamoDb::Generic'] = obj.getInfo()
+            del obj
+        
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
+        
+        
+        
+        for eachTable in listOfTables:
+            obj = DynamoDbCommon(eachTable, self.dynamoDbClient, self.cloudWatchClient, self.serviceQuotaClient, self.appScalingPolicyClient, self.backupClient, self.cloudTrailClient)
+            obj.run()
             objs['DynamoDb::' + eachTable['Table']['TableName']] = obj.getInfo()
             del obj
         
+ 
         return objs
+    
         
-            
            
 if __name__ == "__main__":
     Config.init()
-    o = DynamoDb('ap-southeast-2')
+    o = DynamoDb('ap-southeast-1')
     out = o.advise()
+    out = json.dumps(out, indent=4)
     print(out)
 
     

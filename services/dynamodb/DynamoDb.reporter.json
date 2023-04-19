@@ -12,19 +12,6 @@
 			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableLevelCostAnalysis.html/>"
 		]
 	},
-	"capacityMode":{
-	    "category":"CO",
-	    "description": "--",
-	    "shortDesc":"--",
-	    "criticality": "H",
-		"downtime": 0,
-		"slowness": 0,
-		"additionalCost": -1,
-		"needFullTest": 0,
-		"ref": [
-			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableCapacityMode.html>"
-		]
-	},
 	"provisionedAutoScaling":{
 	    "category":"CO",
 	    "description": "You have {$COUNT} Tables that has enabled provisioned capacity with autoscaling",
@@ -39,7 +26,7 @@
 		]
 	},
 	"autoScalingHighUtil":{
-	    "category":"CO",
+	    "category":"PE",
 	    "description": "You have {$COUNT} Tables that has enabled provisioned capacity with autoscaling",
 	    "shortDesc":"Provisioned capacity with Autoscaling",
 	    "criticality": "H",
@@ -52,7 +39,7 @@
 		]
 	},
 	"autoScalinglowUtil":{
-	    "category":"CO",
+	    "category":"PE",
 	    "description": "You have {$COUNT} Tables that has enabled provisioned capacity with autoscaling",
 	    "shortDesc":"Provisioned capacity with Autoscaling",
 	    "criticality": "H",
@@ -62,32 +49,6 @@
 		"needFullTest": 0,
 		"ref": [
 			"[AWS Docs]<>"
-		]
-	},
-	"reservedCapacity":{
-	    "category":"CO",
-	    "description": "--",
-	    "shortDesc":"--",
-	    "criticality": "H",
-		"downtime": 0,
-		"slowness": 0,
-		"additionalCost": -1,
-		"needFullTest": 0,
-		"ref": [
-			"[AWS Docs]<>"
-		]
-	},
-	"tableClass":{
-	    "category":"CO",
-	    "description": "You have {$COUNT} Tables that has enabled Normal/IA class",
-	    "shortDesc":"Table class type",
-	    "criticality": "H",
-		"downtime": 0,
-		"slowness": 0,
-		"additionalCost": -1,
-		"needFullTest": 0,
-		"ref": [
-			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_UnusedResources.html>"
 		]
 	},
 	"unusedResourcesGSIRead":{
@@ -181,7 +142,7 @@
 			"[AWS Docs]<>"
 		]
 	},
-	"enabledBackup":{
+	"backupStatus":{
 	    "category":"R",
 	    "description": "You have {$COUNT} Tables that has not enabled backup",
 	    "shortDesc":"Tables Backup",
@@ -194,7 +155,7 @@
 			"[AWS Docs]<>"
 		]
 	},
-	"serviceLimitPerTable":{
+	"serviceLimitPerTableRCU":{
 	    "category":"R",
 	    "description": "You have {$COUNT} Tables that has average reach of 80% of current limit",
 	    "shortDesc":"Service limit per table",
@@ -207,7 +168,20 @@
 			"[AWS Docs]<>"
 		]
 	},
-	"serviceLimitPerRegion":{
+	"serviceLimitPerTableWCU":{
+	    "category":"R",
+	    "description": "You have {$COUNT} Tables that has average reach of 80% of current limit",
+	    "shortDesc":"Service limit per table",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"serviceLimitMaxTablePerRegion":{
 	    "category":"R",
 	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
 	    "shortDesc":"Tables limit per region",
@@ -221,7 +195,7 @@
 		]
 	},
 	"capacityModeOnDemand":{
-	    "category":"R",
+	    "category":"CO",
 	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
 	    "shortDesc":"Tables limit per region",
 	    "criticality": "H",
@@ -234,7 +208,7 @@
 		]
 	},
 	"capacityModeProvisioned":{
-	    "category":"R",
+	    "category":"CO",
 	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
 	    "shortDesc":"Tables limit per region",
 	    "criticality": "H",
@@ -247,20 +221,7 @@
 		]
 	},
 	"autoScalingStatus":{
-	    "category":"R",
-	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
-	    "shortDesc":"Tables limit per region",
-	    "criticality": "H",
-		"downtime": 0,
-		"slowness": 0,
-		"additionalCost": -1,
-		"needFullTest": 0,
-		"ref": [
-			"[AWS Docs]<>"
-		]
-	},
-	"backupStatus":{
-	    "category":"R",
+	    "category":"CO",
 	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
 	    "shortDesc":"Tables limit per region",
 	    "criticality": "H",
@@ -273,7 +234,7 @@
 		]
 	},
 	"systemErrors":{
-	    "category":"R",
+	    "category":"OE",
 	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
 	    "shortDesc":"Tables limit per region",
 	    "criticality": "H",
@@ -286,6 +247,110 @@
 		]
 	},
 	"throttledRequest":{
+	    "category":"OE",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"serviceLimitMaxTablePerRegion":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"serviceLimitMaxGSIPerTable":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"conditionalCheckFailedRequests":{
+	    "category":"OE",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"userErrors":{
+	    "category":"OE",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"trailDeleteBackup":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"trailDeleteTable":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"rcuServiceLimit":{
+	    "category":"R",
+	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
+	    "shortDesc":"Tables limit per region",
+	    "criticality": "H",
+		"downtime": 0,
+		"slowness": 0,
+		"additionalCost": -1,
+		"needFullTest": 0,
+		"ref": [
+			"[AWS Docs]<>"
+		]
+	},
+	"wcuServiceLimit":{
 	    "category":"R",
 	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
 	    "shortDesc":"Tables limit per region",

@@ -2,6 +2,7 @@ import boto3
 import botocore
 import datetime
 import urllib.parse
+from statistics import mean
 
 from services.Service import Service
 from utils.Config import Config
@@ -11,7 +12,7 @@ from services.Evaluator import Evaluator
 
 class DynamoDbCommon(Evaluator):
 
-    def __init__(self, tables, dynamoDbClient, cloudWatchClient, serviceQuotaClient, appScalingPolicyClient, backupClient):
+    def __init__(self, tables, dynamoDbClient, cloudWatchClient, serviceQuotaClient, appScalingPolicyClient, backupClient, cloudTrailClient):
         super().__init__()
         self.tables = tables
         self.dynamoDbClient = dynamoDbClient
@@ -19,6 +20,7 @@ class DynamoDbCommon(Evaluator):
         self.serviceQuotaClient = serviceQuotaClient
         self.appScalingPolicyClient = appScalingPolicyClient
         self.backupClient = backupClient
+        self.cloudTrailClient = cloudTrailClient
         
         self.init()
 
@@ -248,7 +250,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check CW Sum SystemErrors > 0
-    def _check_systemerrors(self):
+    def _check_system_errors(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -307,15 +309,32 @@ class DynamoDbCommon(Evaluator):
             ecode = e.response['Error']['Code']
             print(ecode)
     
-    # logic to check CW Sum ConditionalFailedRequest > 0
-    def _check_conditional_failed_request(self):
+    # logic to check service limits max GSI per table
+    def _check_service_limits_max_gsi_table(self):
+        try:
+            #Retrieve quota for DynamoDb = L-F98FE922
+            serviceQuotasResutls = self.serviceQuotaClient.list_service_quotas(ServiceCode='dynamodb')
+            for quotas in serviceQuotasResutls['Quotas']:
+                #Check for GSI limit / table
+                if quotas['QuotaCode'] == 'L-F7858A77':
+                    y = int(80 * quotas['Value'] / 100)
+                    x = len(self.tables['Table']['GlobalSecondaryIndexes'])
+                    if x >= y:
+                        self.results['serviceLimitMaxGSIPerTable'] = [-1, self.tables['Table']['TableName'] + ' exceed 80% recommended GSI in the table']
+                        
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
+    
+    # logic to check CW Sum ConditionalCheckFailedRequests > 0
+    def NOTVALIDATED_check_conditional_check_failed_requests(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
                 Namespace = 'AWS/DynamoDB',
-                MetricName = 'ThrottledRequests',
+                MetricName = 'ConditionalCheckFailedRequests',
                 Dimensions = [
-                       {
+                        {
                             'Name':'TableName',
                             'Value':self.tables['Table']['TableName']
                         },
@@ -324,25 +343,107 @@ class DynamoDbCommon(Evaluator):
                 EndTime = datetime.datetime.now(),
                 Period = 900,
                 Statistics = [
-                    'Sum',
+                    'SampleCount',
                 ],
                 Unit = 'Count'
             )
             
             for eachDatapoints in result['Datapoints']:
                 if eachDatapoints['Sum'] >= 1.0:
-                    self.results['conditionalFailedRequest'] = [-1, self.tables['Table']['TableName'] + ' : resulted in HTTP400 errors in the past 7 days']
+                    self.results['conditionalCheckFailedRequests'] = [-1, self.tables['Table']['TableName'] + ' : SystemError resulting in HTTP500 error code over the past 7 days']
                     
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
     
+    # logic to check CW Sum UserErrors > 0
+    def NOTVALIDATED_check_user_errors(self):
+        try:
+            #Count the number active reads on the table on the GSIs
+            result = self.cloudWatchClient.get_metric_statistics(
+                Namespace = 'AWS/DynamoDB',
+                MetricName = 'UserErrors',
+                StartTime = datetime.datetime.now() - datetime.timedelta(7),
+                EndTime = datetime.datetime.now(),
+                Period = 900,
+                Statistics = [
+                    'SampleCount',
+                ],
+                Unit = 'Count'
+            )
+            
+            for eachDatapoints in result['Datapoints']:
+                if eachDatapoints['Sum'] >= 1.0:
+                    self.results['userErrors'] = [-1, self.tables['Table']['TableName'] + ' : SystemError resulting in HTTP500 error code over the past 7 days']
+                    
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
     
+    # logic to check service limit wcu and rcu
+    def NOTVALIDATED_check_service_limit_wcu_rcu(self):
+        try:
+            #Count the number active reads on the table RCU
+            rcuResult = self.cloudWatchClient.get_metric_statistics(
+                Namespace = 'AWS/DynamoDB',
+                MetricName = 'ConsumedReadCapacityUnits',
+                Dimensions = [
+                        {
+                            'Name':'TableName',
+                            'Value':self.tables['Table']['TableName']
+                        },
+                    ],
+                StartTime = datetime.datetime.now() - datetime.timedelta(1),
+                EndTime = datetime.datetime.now(),
+                Period = 60,
+                Statistics = [
+                    'Average',
+                ],
+                Unit = 'Count'
+            )
+            
+            arrRCUAverage = []
+            
+            for eachRCUAverage in rcuResult['Datapoints']:
+                arrRCUAverage.append(eachRCUAverage['Average'])
+                
+            if arrRCUAverage >= 80.0:
+                self.results['rcuServiceLimit'] = [-1, 'Your average RCU is ' + arrRCUAverage + ' over the past 1 day']
+            
+            arrWCUAverage = []
+            
+            for eachWCUAverage in rcuResult['Datapoints']:
+                arrWCUAverage.append(eachWCUAverage['Average'])
+                
+            if arrRCUAverage >= 80.0:
+                self.results['wcuServiceLimit'] = [-1, 'Your average WCU is ' + arrWCUAverage + ' over the past 1 day']
+               
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
     
-    
-    
+    # logic to check table with provisioned and autoscaling enable
+    def NOTVALIDATED_check_provisioned_and_autoscaling(self):
+        try:
+            #retrieve provisioned values for a specific table
+            if self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PROVISIONED':
+                results = self.appScalingPolicyClient.describe_scalable_targets(
+                    ServiceNamespace = 'dynamodb',
+                    ResourceIds = ['table/'+self.tables['Table']['TableName']],
+                    ScalableDimension = 'dynamodb:table:ReadCapacityUnits' and 'dynamodb:table:WriteCapacityUnits',
+                    MaxResults = 100
+                )
+                for targets in results['ScalableTargets']:
+                    if targets is None:
+                        self.results['provisionedAutoscaling'] = [-1, 'Provisioned capacity but autoscaling is not enabled']
+        
+        except botocore.exceptions.CLientError as e:
+            ecode = e.response['Error']['Code']
+            print(ecode)
+
     # logic to check right provisioning
     def INCOMPLETE_check_right_provisioning(self):
+        #https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_RightSizedProvisioning.html#CostOptimization_RightSizedProvisioning_UnderProvisionedTables
         try:
             #WCU provisioned and consumed
             wcuResult = self.cloudWatchClient.get_metric_data(
@@ -403,6 +504,7 @@ class DynamoDbCommon(Evaluator):
                     ScanBy = 'TimestampDescending',
                     MaxDataPoints = 24
                 )
+            print(wcuResult)
             
             #RCU provisioned and consumed
             rcuResult = self.cloudWatchClient.get_metric_data(
@@ -458,7 +560,7 @@ class DynamoDbCommon(Evaluator):
                             'ReturnData':True
                         }
                     ],
-                    StartTime = datetime.datetime.now() - datetime.timedelta(7),
+                    StartTime = datetime.datetime.now() - datetime.timedelta(365),
                     EndTime = datetime.datetime.now(),
                     ScanBy = 'TimestampDescending',
                     MaxDataPoints = 24
@@ -468,6 +570,14 @@ class DynamoDbCommon(Evaluator):
             
             #Underprovision
             #1 - last 12 months ~ 90%
+            #WCU
+            arrWCUUtil = []
+            for eachValue in wcuResult['MetricDataResults'][0]['Values']:
+                arrWCUUtil.append(eachValue)
+            
+            averageWCUUtil = mean(arrWCUUtil)
+
+                
             #2 - growing 8% monthly in 3 months
             #3 - growing 5% monthly in 4.5 months
             
@@ -478,32 +588,16 @@ class DynamoDbCommon(Evaluator):
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
-
-
-    #INCOMPLETE
-    # logic to check max table / region
-    def INCOMPLETE__check_service_quotas(self):
-        accountQuota = []
-        try:
-            #QuotaCode = L-F98FE922
-            serviceQuotasResutls = self.serviceQuotaClient.list_service_quotas(ServiceCode='dynamodb')
-            for items in serviceQuotasResutls:
-                if items['QuotaCode'] == 'L-F98FE922':
-                    accountQuota.append(items)
-                    
-            #TODO
             
-        except botocore.exceptions.CLientError as e:
-            raise e
-        
-    #INCOMPLETE
-    # logic to check table with provisioned and autoscaling enable
-    def INCOMPLETE__check_provisioned_and_autoscaling(self):
+    # logic to check table class
+    def INCOMPLETE_check_table_class(self):
+        #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ce/client/get_cost_and_usage.html
+        #https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch/client/get_metric_statistics.html
+        #https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableClass.html
         try:
-            #retrieve provisioned values for a specific table
-            if self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PROVISIONED':
-                print('empty')
-                    #TO DO
-                    #HOW to check autoscaliing
+            # TODO: write code...
+            # Storage Cost vs RCU/WCU cost (IA: When storage cost is at least 50% > than IOPS). RI does not supports IA
         except botocore.exceptions.CLientError as e:
-            raise e
+            ecode = e.response['Error']['Code']
+            print(ecode)
+
