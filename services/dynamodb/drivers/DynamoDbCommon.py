@@ -42,10 +42,8 @@ class DynamoDbCommon(Evaluator):
             #retrieve tags for specific table by tableARN
             result = self.dynamoDbClient.list_tags_of_resource(ResourceArn = self.tables['Table']['TableArn'])
             #check tags
-            if result['Tags'] is None:
+            if not result['Tags']:
                 self.results['resourcesWithTags'] = [-1, self.tables['Table']['TableName'] + ' does not have tag']
-            #print('Checking ' + self.tables['Table']['TableName'] + ' for resource tag completed')
-            
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
@@ -154,9 +152,8 @@ class DynamoDbCommon(Evaluator):
         try:
             result = self.dynamoDbClient.describe_continuous_backups(TableName = self.tables['Table']['TableName'])
             #Check results of ContinuousBackupStatus (ENABLED/DISABLED)
-            if result['ContinuousBackupsDescription']['ContinuousBackupsStatus'] == 'DISABLED':                    
-                self.results['enabledContinuousBackup'] = [-1, 'Continuous Backup Disabled for table ' + self.tables['Table']['TableName']]
-
+            if result['ContinuousBackupsDescription']['PointInTimeRecoveryDescription']['PointInTimeRecoveryStatus'] == 'DISABLED':                    
+                self.results['enabledCPointInTimeRecovery'] = [-1, 'Point In Time Recovery is Disabled for table ' + self.tables['Table']['TableName']]
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
@@ -327,7 +324,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check CW Sum ConditionalCheckFailedRequests > 0
-    def NOTVALIDATED_check_conditional_check_failed_requests(self):
+    def _check_conditional_check_failed_requests(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -357,7 +354,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check CW Sum UserErrors > 0
-    def NOTVALIDATED_check_user_errors(self):
+    def _check_user_errors(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -597,7 +594,8 @@ class DynamoDbCommon(Evaluator):
         try:
             # TODO: write code...
             # Storage Cost vs RCU/WCU cost (IA: When storage cost is at least 50% > than IOPS). RI does not supports IA
-        except botocore.exceptions.CLientError as e:
+            print('nothing')
+        except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
 
