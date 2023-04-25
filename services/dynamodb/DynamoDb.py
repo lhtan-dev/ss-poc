@@ -57,9 +57,11 @@ class DynamoDb(Service):
             obj = DynamoDbGeneric(listOfTables, self.dynamoDbClient, self.cloudWatchClient, self.serviceQuotaClient, self.appScalingPolicyClient, self.backupClient, self.cloudTrailClient)
             obj.run()
             objs['DynamoDb::Generic'] = obj.getInfo()
+        
+            
             del obj
         
-        except botocore.exceptions.CLientError as e:
+        except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
         
@@ -71,7 +73,6 @@ class DynamoDb(Service):
             objs['DynamoDb::' + eachTable['Table']['TableName']] = obj.getInfo()
             del obj
         
- 
         return objs
     
         

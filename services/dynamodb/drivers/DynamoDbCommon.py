@@ -25,31 +25,31 @@ class DynamoDbCommon(Evaluator):
         self.init()
 
     # logic to check delete protection    
-    def _check_delete_protection(self):
+    def DONE_check_delete_protection(self):
         #print('Checking ' + self.tables['Table']['TableName'] + ' delete protection started')
         try:
             if self.tables['Table']['DeletionProtectionEnabled'] == False:
-                self.results['deleteTableProtection'] = [-1, self.tables['Table']['TableName'] + ' delete protection is disabled']
+                self.results['deleteTableProtection'] = [-1, 'Delete protection is disabled']
                 
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
             
     # logic to check resources for tags
-    def _check_resources_for_tags(self):
+    def DONE_check_resources_for_tags(self):
         #print('Checking ' + self.tables['Table']['TableName'] + ' for resource tag started')
         try:
             #retrieve tags for specific table by tableARN
             result = self.dynamoDbClient.list_tags_of_resource(ResourceArn = self.tables['Table']['TableArn'])
             #check tags
             if not result['Tags']:
-                self.results['resourcesWithTags'] = [-1, self.tables['Table']['TableName'] + ' does not have tag']
+                self.results['resourcesWithTags'] = [-1, 'No resource tag']
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
     
     # logic to check unused resources GSI - read
-    def _check_unused_resources_gsi_read(self):
+    def NOTVALIDATED_check_unused_resources_gsi_read(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -84,7 +84,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
         
     # logic to check unused resource GSI - write
-    def _check_unused_resources_gsi_write(self):
+    def NOTVALIDATED_check_unused_resources_gsi_write(self):
         try:
             
             #Count the number active reads on the table on the GSIs
@@ -120,46 +120,46 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
         
     # logic to check attribute length > 15 and >8
-    def _check_attribute_length(self):
+    def DONE_check_attribute_length(self):
         try:
             for tableAttributes in self.tables['Table']['AttributeDefinitions']:
-                if len(tableAttributes['TableName']) > 15:
+                if len(tableAttributes['AttributeName']) > 15:
                     # error attributesNamesXL for length > 15
-                    self.results['attributeNamesXL'] = [-1, self.tables['Table']['TableName'] + ' - attribute name ' + tableAttributes['TableName']]
-                elif len(tableAttributes['TableName']) > 8:
+                    self.results['attributeNamesXL'] = [-1,  'Attribute name : ' + tableAttributes['AttributeName']]
+                elif len(tableAttributes['AttributeName']) > 8:
                     # error attributesNamesL for length > 8 <= 15
-                    self.results['attributeNamesL'] = [-1, self.tables['Table']['TableName'] + ' - attribute name ' + tableAttributes['TableName']]
+                    self.results['attributeNamesL'] = [-1, 'Attribute name : ' + tableAttributes['AttributeName']]
         
-        except botocore.exceptions.CLientError as e:
+        except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
         
     # logic to check for TTL status
-    def _check_time_to_live_status(self):
+    def DONE_check_time_to_live_status(self):
         try:
             result = self.dynamoDbClient.describe_time_to_live(TableName = self.tables['Table']['TableName'])
         
             #Check result for TimeToLiveStatus (ENABLED/DISABLED)
             if result['TimeToLiveDescription']['TimeToLiveStatus'] == 'DISABLED':
-                self.results['enabledTTL'] = [-1, self.tables['Table']['TableName'] + ' TTL is disabled.']
+                self.results['enabledTTL'] = [-1, 'TTL is not enabled.']
             
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
     
-    # logic to check continuous backup
-    def _check_continuous_backup(self):
+    # logic to check Point In Time Recovery backup
+    def DONE_check_pitr_backup(self):
         try:
             result = self.dynamoDbClient.describe_continuous_backups(TableName = self.tables['Table']['TableName'])
             #Check results of ContinuousBackupStatus (ENABLED/DISABLED)
             if result['ContinuousBackupsDescription']['PointInTimeRecoveryDescription']['PointInTimeRecoveryStatus'] == 'DISABLED':                    
-                self.results['enabledCPointInTimeRecovery'] = [-1, 'Point In Time Recovery is Disabled for table ' + self.tables['Table']['TableName']]
+                self.results['enabledPointInTimeRecovery'] = [-1, 'Point In Time Recovery is disabled ']
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
     
     # logic to check autoscaling aggresiveness
-    def _check_autoscaling_aggresiveness(self):
+    def NOTVALIDATED_check_autoscaling_aggresiveness(self):
         try:
             results = self.appScalingPolicyClient.describe_scaling_policies(
                 ServiceNamespace = 'dynamodb',
@@ -178,7 +178,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check capacity mode
-    def _check_capacity_mode(self):
+    def NOTVALIDATED_check_capacity_mode(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -217,7 +217,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
 
     # logic to check provisoned capacity with autoscaling
-    def _check_autoscaling_status(self):
+    def NOTVALIDATED_check_autoscaling_status(self):
         try:
 
             #Check for autoscaling policy in each table
@@ -234,20 +234,19 @@ class DynamoDbCommon(Evaluator):
             ecode = e.response['Error']['Code']
             print(ecode)
     
-    # logic to check table has PITR backup enabled
-    def _check_backup_status(self):
+    # logic to check for any existing backup available
+    def DONE_check_backup_status(self):
         try:
             results = self.backupClient.list_recovery_points_by_resource(ResourceArn = self.tables['Table']['TableArn'])
-            
-            if results is None:
-                self.results['backupStatus'] = [-1, self.tables['Table']['TableName'] + ' backup status is disabled']
-                
+
+            if len(results['RecoveryPoints']) < 1:
+                self.results['backupStatus'] = [-1, 'No backup created for the table']
         except botocore.exception as e:
             ecode = e.response['Error']['Code']
             print(ecode)
     
     # logic to check CW Sum SystemErrors > 0
-    def _check_system_errors(self):
+    def NOTVALIDATED_check_system_errors(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -277,7 +276,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
      
     # logic to check CW Sum ThrottledRequest > 0
-    def _check_throttled_request(self):
+    def NOTVALIDATED_check_throttled_request(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -307,7 +306,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check service limits max GSI per table
-    def _check_service_limits_max_gsi_table(self):
+    def NOTVALIDATED_check_service_limits_max_gsi_table(self):
         try:
             #Retrieve quota for DynamoDb = L-F98FE922
             serviceQuotasResutls = self.serviceQuotaClient.list_service_quotas(ServiceCode='dynamodb')
@@ -324,7 +323,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check CW Sum ConditionalCheckFailedRequests > 0
-    def _check_conditional_check_failed_requests(self):
+    def NOTVALIDATED_check_conditional_check_failed_requests(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -354,7 +353,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check CW Sum UserErrors > 0
-    def _check_user_errors(self):
+    def NOTVALIDATED_check_user_errors(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
