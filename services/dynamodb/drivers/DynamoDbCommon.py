@@ -21,11 +21,10 @@ class DynamoDbCommon(Evaluator):
         self.appScalingPolicyClient = appScalingPolicyClient
         self.backupClient = backupClient
         self.cloudTrailClient = cloudTrailClient
-        
-        self.init()
+
 
     # logic to check delete protection    
-    def DONE_check_delete_protection(self):
+    def VALIDATED_check_delete_protection(self):
         #print('Checking ' + self.tables['Table']['TableName'] + ' delete protection started')
         try:
             if self.tables['Table']['DeletionProtectionEnabled'] == False:
@@ -36,7 +35,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
             
     # logic to check resources for tags
-    def DONE_check_resources_for_tags(self):
+    def VALIDATED_check_resources_for_tags(self):
         #print('Checking ' + self.tables['Table']['TableName'] + ' for resource tag started')
         try:
             #retrieve tags for specific table by tableARN
@@ -49,7 +48,8 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check unused resources GSI - read
-    def NOTVALIDATED_check_unused_resources_gsi_read(self):
+    def VALIDATED_check_unused_resources_gsi_read(self):
+        
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -58,7 +58,11 @@ class DynamoDbCommon(Evaluator):
                 Dimensions = [
                        {
                             'Name':'TableName',
-                            'Value':self.tables['Tables']['TableName']
+                            'Value':self.tables['Table']['TableName']
+                        },
+                        {
+                            'Name':'GlobalSecondaryIndexName',
+                            'Value':self.tables['Table']['GlobalSecondaryIndexes'][0]['IndexName']
                         },
                     ],
                 StartTime = datetime.datetime.now() - datetime.timedelta(30),
@@ -73,18 +77,18 @@ class DynamoDbCommon(Evaluator):
             #Calculate sum of all occurances within the 30 days period
             sumTotal = 0.0    
             for eachSum in result['Datapoints']:
-               sumTotal = sumTotal + eachSum['Sum']
+               sumTotal += eachSum['Sum']
         
             #Flag as issue if > 0 issues in the 30 days period.
-            if sumTotal > 0:
-              self.results['unusedResourcesGSIRead'] = [-1, self.tables['Tables']['TableName'] + ' has RCU of ' + sumTotal + ' over the past 30 days']
+            if sumTotal == 0:
+              self.results['unusedResourcesGSIRead'] = [-1, 'GSI ['+self.tables['Table']['GlobalSecondaryIndexes'][0]['IndexName']+'] with RCU of 0 over the past 30 days']
         
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
         
     # logic to check unused resource GSI - write
-    def NOTVALIDATED_check_unused_resources_gsi_write(self):
+    def VALIDATED_check_unused_resources_gsi_write(self):
         try:
             
             #Count the number active reads on the table on the GSIs
@@ -94,7 +98,11 @@ class DynamoDbCommon(Evaluator):
                 Dimensions = [
                        {
                            'Name':'TableName',
-                           'Value':self.tables['Tables']['TableName']
+                           'Value':self.tables['Table']['TableName']
+                       },
+                       {
+                            'Name':'GlobalSecondaryIndexName',
+                            'Value':self.tables['Table']['GlobalSecondaryIndexes'][0]['IndexName']
                        },
                     ],
                 StartTime = datetime.datetime.now() - datetime.timedelta(30),
@@ -105,37 +113,37 @@ class DynamoDbCommon(Evaluator):
                 ],
                 Unit = 'Count'
             )
-        
+            print(result)
             #Calculate sum of all occurances within the 30 days period
             sumTotal = 0.0    
             for eachSum in result['Datapoints']:
-                sumTotal = sumTotal + eachSum['Sum']
+                sumTotal += eachSum['Sum']
         
             #Flag as issue if > 0 issues in the 30 days period.
-            if sumTotal > 0:
-                self.results['unusedResourcesGSIWrite'] = [-1, self.tables['Tables']['TableName'] + ' has WCU of ' + sumTotal + ' over the past 30 days']
+            if sumTotal == 0:
+                self.results['unusedResourcesGSIWrite'] = [-1, 'GSI ['+self.tables['Table']['GlobalSecondaryIndexes'][0]['IndexName']+'] with WCU of 0 over the past 30 days']
         
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
         
     # logic to check attribute length > 15 and >8
-    def DONE_check_attribute_length(self):
+    def VALIDATED_check_attribute_length(self):
         try:
             for tableAttributes in self.tables['Table']['AttributeDefinitions']:
                 if len(tableAttributes['AttributeName']) > 15:
                     # error attributesNamesXL for length > 15
-                    self.results['attributeNamesXL'] = [-1,  'Attribute name : ' + tableAttributes['AttributeName']]
+                    self.results['attributeNamesXL'] = [-1,  'Attribute name <' + tableAttributes['AttributeName'] + '> is longer than 15 characters.']
                 elif len(tableAttributes['AttributeName']) > 8:
                     # error attributesNamesL for length > 8 <= 15
-                    self.results['attributeNamesL'] = [-1, 'Attribute name : ' + tableAttributes['AttributeName']]
+                    self.results['attributeNamesL'] = [-1, 'Attribute name : <' + tableAttributes['AttributeName'] + '> is longer than 8 characters.']
         
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
         
     # logic to check for TTL status
-    def DONE_check_time_to_live_status(self):
+    def VALIDATED_check_time_to_live_status(self):
         try:
             result = self.dynamoDbClient.describe_time_to_live(TableName = self.tables['Table']['TableName'])
         
@@ -148,7 +156,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check Point In Time Recovery backup
-    def DONE_check_pitr_backup(self):
+    def VALIDATED_check_pitr_backup(self):
         try:
             result = self.dynamoDbClient.describe_continuous_backups(TableName = self.tables['Table']['TableName'])
             #Check results of ContinuousBackupStatus (ENABLED/DISABLED)
@@ -178,7 +186,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check capacity mode
-    def NOTVALIDATED_check_capacity_mode(self):
+    def VALIDATED_check_capacity_mode(self):
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -190,27 +198,28 @@ class DynamoDbCommon(Evaluator):
                             'Value':self.tables['Table']['TableName']
                         },
                     ],
-                StartTime = datetime.datetime.now() - datetime.timedelta(3),
+                StartTime = datetime.datetime.now() - datetime.timedelta(7),
                 EndTime = datetime.datetime.now(),
-                Period = 360,
+                Period = 3600,
                 Statistics = [
-                    'Average' and 'Maximum',
-                ],
-                Unit = 'Seconds'
+                    'Average'
+                ], 
+                Unit = 'Count'
             )
         
             #Calculate % of write capacity in the given hour
-            percentageWrite = 0  
+            _percentageWrite = 0  
             for eachDatapoints in result['Datapoints']:
-                if eachDatapoints is not None:
-                    percentageWrite = round((eachDatapoints['Average'] / eachDatapoints['Maximum']) * 100, 2)
-                    #Check if percentage <= 18 and billingmode is on-demand
-                    if percentageWrite <= 18.00 and self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PROVISIONED' :
-                        #Recommended for On-demand capacity
-                        self.results['capacityModeProvisioned'] = [-1, self.tables['Table']['TableName'] + ' is recommended for on-demand capacity']
-                    elif percentageWrite > 18 and self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PAY_PER_REQUEST' :
-                        #Recommended for Provisioned capacity
-                        self.results['capacityModeOndemand'] = [-1, self.tables['Table']['TableName'] + ' is recommended for provisioned capacity']
+                _percentageWrite += eachDatapoints['Average']
+        
+            #Check if percentage <= 18 and billingmode is on-demand
+            if _percentageWrite <= 0.018 and self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PROVISIONED' :
+                #Recommended for On-demand capacity
+                self.results['capacityModeProvisioned'] = [-1, 'Recommended for on-demand capacity']
+            elif _percentageWrite > 0.018 and self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PAY_PER_REQUEST' :
+                #Recommended for Provisioned capacity
+                self.results['capacityModeOndemand'] = [-1, 'Recommended for provisioned capacity']
+    
     
         except botocore.exception as e:
             ecode = e.response['Error']['Code']
@@ -235,7 +244,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check for any existing backup available
-    def DONE_check_backup_status(self):
+    def VALIDATED_check_backup_status(self):
         try:
             results = self.backupClient.list_recovery_points_by_resource(ResourceArn = self.tables['Table']['TableArn'])
 
@@ -258,7 +267,7 @@ class DynamoDbCommon(Evaluator):
                             'Value':'GetRecords'
                         },
                     ],
-                StartTime = datetime.datetime.now() - datetime.timedelta(7),
+                StartTime = datetime.datetime.now() - datetime.timedelta(15),
                 EndTime = datetime.datetime.now(),
                 Period = 900,
                 Statistics = [
@@ -267,6 +276,7 @@ class DynamoDbCommon(Evaluator):
                 Unit = 'Count'
             )
             
+            print(result)
             for eachDatapoints in result['Datapoints']:
                 if eachDatapoints['Sum'] >= 1.0:
                     self.results['systemErrors'] = [-1, self.tables['Table']['TableName'] + ' : SystemError resulting in HTTP500 error code over the past 7 days']
@@ -306,7 +316,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
     
     # logic to check service limits max GSI per table
-    def NOTVALIDATED_check_service_limits_max_gsi_table(self):
+    def VALIDATED_check_service_limits_max_gsi_table(self):
         try:
             #Retrieve quota for DynamoDb = L-F98FE922
             serviceQuotasResutls = self.serviceQuotaClient.list_service_quotas(ServiceCode='dynamodb')
@@ -315,15 +325,19 @@ class DynamoDbCommon(Evaluator):
                 if quotas['QuotaCode'] == 'L-F7858A77':
                     y = int(80 * quotas['Value'] / 100)
                     x = len(self.tables['Table']['GlobalSecondaryIndexes'])
+                    
                     if x >= y:
-                        self.results['serviceLimitMaxGSIPerTable'] = [-1, self.tables['Table']['TableName'] + ' exceed 80% recommended GSI in the table']
+                        self.results['serviceLimitMaxGSIPerTable'] = [-1, str(x) + '/' + str(quotas['Value']) + ' GSI. Exceed 80% recommended GSI in the table']
                         
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
     
     # logic to check CW Sum ConditionalCheckFailedRequests > 0
-    def NOTVALIDATED_check_conditional_check_failed_requests(self):
+    def VALIDATED_check_conditional_check_failed_requests(self):
+        
+        _sumOfConditionalCheckFailedRequest = 0;
+        
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -345,15 +359,20 @@ class DynamoDbCommon(Evaluator):
             )
             
             for eachDatapoints in result['Datapoints']:
-                if eachDatapoints['Sum'] >= 1.0:
-                    self.results['conditionalCheckFailedRequests'] = [-1, self.tables['Table']['TableName'] + ' : SystemError resulting in HTTP500 error code over the past 7 days']
+                _sumOfConditionalCheckFailedRequest += eachDatapoints['SampleCount']
+                
+            if _sumOfConditionalCheckFailedRequest >= 1.0:
+                self.results['conditionalCheckFailedRequests'] = [-1, str(_sumOfConditionalCheckFailedRequest) + ' : ConditionalCheckFailedRequest error occured over the past 7 days']
                     
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
     
     # logic to check CW Sum UserErrors > 0
-    def NOTVALIDATED_check_user_errors(self):
+    def VALIDATED_check_user_errors(self):
+        
+        _sampleCount = 0;
+        
         try:
             #Count the number active reads on the table on the GSIs
             result = self.cloudWatchClient.get_metric_statistics(
@@ -369,8 +388,10 @@ class DynamoDbCommon(Evaluator):
             )
             
             for eachDatapoints in result['Datapoints']:
-                if eachDatapoints['Sum'] >= 1.0:
-                    self.results['userErrors'] = [-1, self.tables['Table']['TableName'] + ' : SystemError resulting in HTTP500 error code over the past 7 days']
+                _sampleCount += eachDatapoints['SampleCount']
+            
+            if _sampleCount >= 1.0:
+                self.results['userErrors'] = [-1, str(_sampleCount) + ' : SystemError resulting in HTTP500 error code over the past 7 days']
                     
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']

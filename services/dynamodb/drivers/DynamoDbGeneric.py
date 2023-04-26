@@ -22,7 +22,7 @@ class DynamoDbGeneric(Evaluator):
         self.cloudTrailClient = cloudTrailClient
         
     # logic to check service limits Max table / region
-    def DONE_check_service_limits_max_table_region(self):
+    def VALIDATED_check_service_limits_max_table_region(self):
         try:
             #Retrieve quota for DynamoDb = L-F98FE922
             serviceQuotasResutls = self.serviceQuotaClient.list_service_quotas(ServiceCode='dynamodb')
@@ -31,14 +31,19 @@ class DynamoDbGeneric(Evaluator):
                 if quotas['QuotaCode'] == 'L-F98FE922':
                     y = int(80 * quotas['Value'] / 100)
                     x = len(self.tables)
-                    if x <= y:
+                    if x >= y:
                         self.results['serviceLimitMaxTablePerRegion'] = [-1, 'You have used ' + str(x) + ' tables from available limit of ' + str(int(quotas['Value']))]
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
             
     # logic to check trail of deleteBackup
-    def DONE_check_trail_delete_backup(self):
+    def VALIDATED_check_trail_delete_backup(self):
+        
+        _startTime = datetime.datetime.now() - datetime.timedelta(30)
+        _endTime = datetime.datetime.now()
+        _deletedBackupsArr = []
+        
         try:
             deleteBackupResults = self.cloudTrailClient.lookup_events(
                 LookupAttributes=[
@@ -47,11 +52,28 @@ class DynamoDbGeneric(Evaluator):
                         'AttributeValue':'DeleteRecoveryPoint'
                     },
                 ],
-                StartTime = datetime.datetime.now() - datetime.timedelta(90),
-                EndTime = datetime.datetime.now(),
+                StartTime = _startTime,
+                EndTime = _endTime,
                 MaxResults = 50
                 )
-            numOfDeleteBackup = len(deleteBackupResults['Events'])
+            _deletedBackupsArr.extend(deleteBackupResults['Events'])
+            
+            while 'NextToken' in deleteBackupResults:
+                deleteBackupResults = self.cloudTrailClient.lookup_events(
+                    LookupAttributes=[
+                        {
+                            'AttributeKey':'EventName',
+                            'AttributeValue':'DeleteRecoveryPoint'
+                        },
+                    ],
+                    StartTime = _startTime,
+                    EndTime = _endTime,
+                    MaxResults = 50,
+                    NextToken = deleteBackupResults['NextToken']
+                )
+                _deletedBackupsArr.extend(deleteBackupResults['Events'])
+            
+            numOfDeleteBackup = len(_deletedBackupsArr)
             
             
             if numOfDeleteBackup > 0:
@@ -62,11 +84,12 @@ class DynamoDbGeneric(Evaluator):
             print(ecode)
         
     # logic to check trail of deleteTable
-    def DONE_check_trail_delete_table(self):
+    def VALIDATED_check_trail_delete_table(self):
         
         _startTime = datetime.datetime.now() - datetime.timedelta(30)
         _endTime = datetime.datetime.now()
-        _deleteTableResultsArr = []
+        _deletedTablesArr = []
+
         try:
             deleteTableResults = self.cloudTrailClient.lookup_events(
                 LookupAttributes=[
@@ -79,7 +102,7 @@ class DynamoDbGeneric(Evaluator):
                 EndTime = _endTime,
                 MaxResults = 50,
             )
-            _deleteTableResultsArr.extend(deleteTableResults['Events'])
+            _deletedTablesArr.extend(deleteTableResults['Events'])
             
             while 'NextToken' in deleteTableResults:
                 deleteTableResults = self.cloudTrailClient.lookup_events(
@@ -94,13 +117,12 @@ class DynamoDbGeneric(Evaluator):
                     MaxResults = 50,
                     NextToken = deleteTableResults['NextToken']
                 )
-                _deleteTableResultsArr.extend(deleteTableResults['Events'])
-                
-            numOfDeleteTable = len(_deleteTableResultsArr)
+                _deletedTablesArr.extend(deleteTableResults['Events'])
+            
+            numOfDeleteTable = len(_deletedTablesArr)
 
-            ##SHOW ONLY 5 RESULTS
             if numOfDeleteTable > 0:
-                self.results['trailDeleteTable'] = [-1, 'There was ' + str(numOfDeleteTable) + ' tables deleted in the past 30 days']
+                self.results['trailDeleteTable'] = [-1, 'There was ' + str(numOfDeleteTable) + ' tables deleted in the past 30 days.']
 
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']

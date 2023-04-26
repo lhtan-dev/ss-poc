@@ -22,60 +22,57 @@ class DynamoDb(Service):
         self.cloudTrailClient = boto3.client('cloudtrail')
     
     
-    #Get all tables descriptions [JSON]
-    #Ref : https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/list_tables.html
-    #Ref : https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/describe_table.html
     def list_tables(self):
         tableArr = []
         try:
             tableNames = self.dynamoDbClient.list_tables()
+            
             #append table name to array
             for tables in tableNames['TableNames']:
                 tableDescription = self.dynamoDbClient.describe_table(TableName = tables)
                 tableArr.append(tableDescription)
             
             #loop thru next page of results    
-            while tableNames.get('LastEvaluatedTableName') is not None:
-                tableNames = self.dynamoDbClient.list_tables(tableNames['LastEvaluatedTableName'],100)
-                tableDescription = self.dynamoDbClient.describe_table(TableName = tableNames['TableNames'])
-                tableArr.append(tableDescription)
-                
-            return tableArr    
+            while 'LastEvaluatedTableName' in tableNames:
+                tableNames = self.dynamoDbClient.list_tables(ExclusiveStartTableName = tableNames['LastEvaluatedTableName'],Limit = 100)
+                for tables in tableNames['TableNames']:
+                    tableDescription = self.dynamoDbClient.describe_table(TableName = tables)
+                    tableArr.append(tableDescription)
+            
+            return tableArr 
             
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
-        
             
     def advise(self):
         
         objs = {}
         
-        #retrieve all tables in DynamoDb
+        #Retrieve all tables with descriptions from DynamoDb
         listOfTables = self.list_tables()
-        #run common checks
+        
         try:
+            #Run generic checks
             obj = DynamoDbGeneric(listOfTables, self.dynamoDbClient, self.cloudWatchClient, self.serviceQuotaClient, self.appScalingPolicyClient, self.backupClient, self.cloudTrailClient)
             obj.run()
             objs['DynamoDb::Generic'] = obj.getInfo()
-        
-            
             del obj
         
+            #Run table specific checks
+            for eachTable in listOfTables:
+                obj = DynamoDbCommon(eachTable, self.dynamoDbClient, self.cloudWatchClient, self.serviceQuotaClient, self.appScalingPolicyClient, self.backupClient, self.cloudTrailClient)
+                obj.run()
+                objs['DynamoDb::' + eachTable['Table']['TableName']] = obj.getInfo()
+                del obj
+            
+            #Return objs
+            return objs
+            
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
         
-        
-        
-        for eachTable in listOfTables:
-            obj = DynamoDbCommon(eachTable, self.dynamoDbClient, self.cloudWatchClient, self.serviceQuotaClient, self.appScalingPolicyClient, self.backupClient, self.cloudTrailClient)
-            obj.run()
-            objs['DynamoDb::' + eachTable['Table']['TableName']] = obj.getInfo()
-            del obj
-        
-        return objs
-    
-        
+
            
 if __name__ == "__main__":
     Config.init()
