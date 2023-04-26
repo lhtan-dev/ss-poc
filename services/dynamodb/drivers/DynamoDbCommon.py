@@ -226,7 +226,7 @@ class DynamoDbCommon(Evaluator):
             print(ecode)
 
     # logic to check provisoned capacity with autoscaling
-    def NOTVALIDATED_check_autoscaling_status(self):
+    def VALIDATED_check_autoscaling_status(self):
         try:
 
             #Check for autoscaling policy in each table
@@ -236,8 +236,8 @@ class DynamoDbCommon(Evaluator):
                 )
             
             #If results comes back with record, autoscaling is enabled
-            if results is None and self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PROVISIONED':
-                self.results['autoScalingStatus'] = [-1 , self.tables['Table']['TableName'] + ' is on PROVISIONED capacity but autoscaling is disabled']
+            if len(results['ScalingPolicies']) == 0 and self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PROVISIONED':
+                self.results['autoScalingStatus'] = [-1 , 'Autoscaling is disabled']
                 
         except botocore.exceptions as e:
             ecode = e.response['Error']['Code']

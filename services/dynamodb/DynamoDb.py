@@ -33,11 +33,11 @@ class DynamoDb(Service):
                 tableArr.append(tableDescription)
             
             #loop thru next page of results    
-            while 'LastEvaluatedTableName' in tableNames:
-                tableNames = self.dynamoDbClient.list_tables(ExclusiveStartTableName = tableNames['LastEvaluatedTableName'],Limit = 100)
-                for tables in tableNames['TableNames']:
-                    tableDescription = self.dynamoDbClient.describe_table(TableName = tables)
-                    tableArr.append(tableDescription)
+            #while 'LastEvaluatedTableName' in tableNames:
+             #   tableNames = self.dynamoDbClient.list_tables(ExclusiveStartTableName = tableNames['LastEvaluatedTableName'],Limit = 100)
+              #  for tables in tableNames['TableNames']:
+               #     tableDescription = self.dynamoDbClient.describe_table(TableName = tables)
+                #    tableArr.append(tableDescription)
             
             return tableArr 
             
