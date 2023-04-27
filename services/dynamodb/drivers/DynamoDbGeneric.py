@@ -22,7 +22,7 @@ class DynamoDbGeneric(Evaluator):
         self.cloudTrailClient = cloudTrailClient
         
     # logic to check service limits Max table / region
-    def VALIDATED_check_service_limits_max_table_region(self):
+    def _check_service_limits_max_table_region(self):
         try:
             #Retrieve quota for DynamoDb = L-F98FE922
             serviceQuotasResutls = self.serviceQuotaClient.list_service_quotas(ServiceCode='dynamodb')
@@ -38,7 +38,7 @@ class DynamoDbGeneric(Evaluator):
             print(ecode)
             
     # logic to check trail of deleteBackup
-    def VALIDATED_check_trail_delete_backup(self):
+    def _check_trail_delete_backup(self):
         
         _startTime = datetime.datetime.now() - datetime.timedelta(30)
         _endTime = datetime.datetime.now()
@@ -84,7 +84,7 @@ class DynamoDbGeneric(Evaluator):
             print(ecode)
         
     # logic to check trail of deleteTable
-    def VALIDATED_check_trail_delete_table(self):
+    def _check_trail_delete_table(self):
         
         _startTime = datetime.datetime.now() - datetime.timedelta(30)
         _endTime = datetime.datetime.now()
