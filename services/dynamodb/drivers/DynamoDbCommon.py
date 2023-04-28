@@ -42,7 +42,7 @@ class DynamoDbCommon(Evaluator):
             result = self.dynamoDbClient.list_tags_of_resource(ResourceArn = self.tables['Table']['TableArn'])
             #check tags
             if not result['Tags']:
-                self.results['resourcesWithTags'] = [-1, 'No resource tag']
+                self.results['resourcesWithoutTags'] = [-1, 'No resource tag']
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
@@ -149,7 +149,7 @@ class DynamoDbCommon(Evaluator):
         
             #Check result for TimeToLiveStatus (ENABLED/DISABLED)
             if result['TimeToLiveDescription']['TimeToLiveStatus'] == 'DISABLED':
-                self.results['enabledTTL'] = [-1, 'TTL is not enabled.']
+                self.results['disabledTTL'] = [-1, 'TTL is not enabled.']
             
         except botocore.exceptions.CLientError as e:
             ecode = e.response['Error']['Code']
@@ -161,7 +161,7 @@ class DynamoDbCommon(Evaluator):
             result = self.dynamoDbClient.describe_continuous_backups(TableName = self.tables['Table']['TableName'])
             #Check results of ContinuousBackupStatus (ENABLED/DISABLED)
             if result['ContinuousBackupsDescription']['PointInTimeRecoveryDescription']['PointInTimeRecoveryStatus'] == 'DISABLED':                    
-                self.results['enabledPointInTimeRecovery'] = [-1, 'Point In Time Recovery is disabled ']
+                self.results['disabledPointInTimeRecovery'] = [-1, 'Point In Time Recovery is disabled ']
         except botocore.exceptions.ClientError as e:
             ecode = e.response['Error']['Code']
             print(ecode)
@@ -196,10 +196,10 @@ class DynamoDbCommon(Evaluator):
             #Check if percentage <= 18 and billingmode is on-demand
             if _percentageWrite <= 0.018 and self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PROVISIONED' :
                 #Recommended for On-demand capacity
-                self.results['capacityModeProvisioned'] = [-1, 'Recommended for on-demand capacity']
+                self.results['capacityModeOnDemand'] = [-1, 'Recommended for on-demand capacity']
             elif _percentageWrite > 0.018 and self.tables['Table']['BillingModeSummary']['BillingMode'] == 'PAY_PER_REQUEST' :
                 #Recommended for Provisioned capacity
-                self.results['capacityModeOndemand'] = [-1, 'Recommended for provisioned capacity']
+                self.results['capacityModeProvisioned'] = [-1, 'Recommended for provisioned capacity']
     
     
         except botocore.exception as e:
@@ -230,7 +230,7 @@ class DynamoDbCommon(Evaluator):
             results = self.backupClient.list_recovery_points_by_resource(ResourceArn = self.tables['Table']['TableArn'])
 
             if len(results['RecoveryPoints']) < 1:
-                self.results['backupStatus'] = [-1, 'No backup created for the table']
+                self.results['disabledBackup'] = [-1, 'No backup created for the table']
         except botocore.exception as e:
             ecode = e.response['Error']['Code']
             print(ecode)
@@ -409,7 +409,7 @@ class DynamoDbCommon(Evaluator):
                 if _rcuTarget <= 50.0:
                     self.results['autoScalingLowUtil'] = [-1, 'Low utilization policy for RCU with value ' + str(_rcuTarget)]
             
-                if _wcuTarget >= 0.0:
+                if _wcuTarget >= 80.0:
                     self.results['autoScalingHighUtil'] = [-1, 'High utilization policy for WCU with value ' + str(_wcuTarget)]
             
                 if _wcuTarget <= 50.0:
