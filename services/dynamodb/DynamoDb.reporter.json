@@ -48,7 +48,7 @@
 		"additionalCost": 0,
 		"needFullTest": 0,
 		"ref": [
-			"[AWS Docs]<NEED_REF>"
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableUsagePatterns.html>"
 		]
 	},
 	"unusedResourcesGSIWrite":{
@@ -61,7 +61,7 @@
 		"additionalCost": 0,
 		"needFullTest": 0,
 		"ref": [
-			"[AWS Docs]<NEED_REF>"
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/CostOptimization_TableUsagePatterns.html>"
 		]
 	},
 	"attributeNamesXL":{
