@@ -217,20 +217,20 @@
 		"additionalCost": -1,
 		"needFullTest": 0,
 		"ref": [
-			"[AWS Docs]<NEED_REF>"
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html#limits-tables>"
 		]
 	},
 	"throttledRequest":{
 	    "category":"O",
-	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
-	    "shortDesc":"Tables limit per region",
+	    "description": "You have {$COUNT} throttled requests over the past 30 days",
+	    "shortDesc":"Throttled request detected.",
 	    "criticality": "H",
 		"downtime": 0,
 		"slowness": 0,
 		"additionalCost": -1,
 		"needFullTest": 0,
 		"ref": [
-			"[AWS Docs]<NEED_REF>"
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/metrics-dimensions.html#ThrottledRequests>"
 		]
 	},
 	"serviceLimitMaxGSIPerTable":{
@@ -248,28 +248,28 @@
 	},
 	"conditionalCheckFailedRequests":{
 	    "category":"O",
-	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
-	    "shortDesc":"Tables limit per region",
+	    "description": "You have {$COUNT} conditional check failed requests errors over the past 30 days.",
+	    "shortDesc":"Conditional Check Failed Requests detected",
 	    "criticality": "H",
 		"downtime": 0,
 		"slowness": 0,
 		"additionalCost": -1,
 		"needFullTest": 0,
 		"ref": [
-			"[AWS Docs]<NEED_REF>"
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/metrics-dimensions.html#ConditionalCheckFailedRequests>"
 		]
 	},
 	"userErrors":{
 	    "category":"O",
-	    "description": "You have {$COUNT} tables against 2500(default) or 10000(max) tables per region available.",
-	    "shortDesc":"Tables limit per region",
+	    "description": "You have {$COUNT} user errors detected in the past 30 days.",
+	    "shortDesc":"User errors detected",
 	    "criticality": "H",
 		"downtime": 0,
 		"slowness": 0,
 		"additionalCost": -1,
 		"needFullTest": 0,
 		"ref": [
-			"[AWS Docs]<NEED_REF>"
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/metrics-dimensions.html#UserErrors>"
 		]
 	},
 	"trailDeleteBackup":{
@@ -308,7 +308,7 @@
 		"additionalCost": -1,
 		"needFullTest": 0,
 		"ref": [
-			"[AWS Docs]<NEED_REF>"
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html#default-limits-throughput-capacity-modes>"
 		]
 	},
 	"wcuServiceLimit":{
@@ -321,7 +321,7 @@
 		"additionalCost": -1,
 		"needFullTest": 0,
 		"ref": [
-			"[AWS Docs]<NEED_REF>"
+			"[AWS Docs]<https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html#default-limits-throughput-capacity-modes>"
 		]
 	},
 	"disabledPointInTimeRecovery":{
